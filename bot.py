@@ -256,6 +256,11 @@ async def setup(
 
 ):
     channel: discord.VoiceChannel = voice_channel
+
+    if (bitrate * 1000) > channel.guild.bitrate_limit:
+        await ctx.respond(f"Your Server can only have a max Bitrate of {int(channel.guild.bitrate_limit / 1000)}")
+        return
+
     sql = insertIntoVoiceChannels(channel.id, channel.guild.id, False, user_limit, bitrate * 1000)
     execution = execute(sql)
     if execution is None:
@@ -264,7 +269,7 @@ async def setup(
         embed.add_field(name="User Limit", value=user_limit)
         embed.add_field(name="Bitrate", value=bitrate)
         print(f"New Temporary Voice Channel {channel.name}")
-        await ctx.respond("A")
+        await ctx.respond("Voice Temp Setup success")
         await ctx.send(embed=embed)
         return
     if execution.startswith("Duplicate entry"):
