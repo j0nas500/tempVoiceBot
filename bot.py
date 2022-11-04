@@ -322,6 +322,52 @@ async def auto_rename(
     await ctx.respond(f"auto rename for voice channel {channel.mention} enabled")
 
 
+@bot.slash_command(name="ban", description="Ban/Unban Member from your temp Voice")
+@discord.default_permissions(
+    connect=True
+)
+async def ban(
+        ctx,
+        member_to_kick: discord.Option(discord.SlashCommandOptionType.user, name="user", description="Select Member to Ban/Unban")
+):
+    member: discord.Member = ctx.author
+    member_kick: discord.Member = member_to_kick
+
+    if member.voice is None:
+        await ctx.respond("You are not in a voice Channel")
+        return
+
+    channel: discord.VoiceChannel = member.voice.channel
+
+    result = execute_list(getTupelById(DbTables.VOICE, channel.id, True))
+    if len(result) < 1:
+        await ctx.respond("Your are not in a temporary voice Channel")
+        return
+    if result[0][5] != member.id:
+        await ctx.respond("Your are not the owner of the temporary voice Channel")
+        return
+
+    if channel.permissions_for(member_kick).connect:
+        overwrite = discord.PermissionOverwrite()
+        overwrite.connect = False
+        await channel.set_permissions(member_kick, reason=f"{member.name} banned {member_kick.name} to temp voice {channel.name}", overwrite=overwrite)
+        if member_kick.voice.channel == channel:
+            await member_kick.move_to(None)
+        print("f{member.name} banned {member_kick.name} to temp voice {channel.name}")
+        await ctx.respond(f"{member_kick.mention} banned from voice {channel.mention}")
+        return
+
+    overwrite = discord.PermissionOverwrite()
+    overwrite.connect = None
+    await channel.set_permissions(member_kick,
+                                  reason=f"{member.name} unbanned {member_kick.name} to temp voice {channel.name}",
+                                  overwrite=overwrite)
+    print("f{member.name} unbanned {member_kick.name} to temp voice {channel.name}")
+    await ctx.respond(f"{member_kick.mention} unbanned from voice {channel.mention}")
+    return
+
+
+
 # intents = discord.Intents.default()
 # intents.presences = True
 # intents.members = True
