@@ -20,7 +20,7 @@ try:
         port=int(os.getenv("MYSQL_PORT")),
         database=os.getenv("MYSQL_DATABASE")
     )
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
 
     print("Connected to the Database")
 except mariadb.Error as e:
