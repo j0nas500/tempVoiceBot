@@ -154,7 +154,8 @@ async def on_voice_state_update(member: discord.Member, voice_state_old: discord
         if len(result) > 0:
             if int(result[0][6]) < 1:
                 return
-            await update_voice_channel_name(discord.Member(bot.get_user(int(result[0][5]))), channel_new)
+            member: discord.Member = bot.get_user(int(result[0][5]))
+            await update_voice_channel_name(member, channel_new)
 
     if channel_old is not None:
         result = execute_list(getId(DbTables.VOICE, channel_old.id, True))
@@ -198,7 +199,8 @@ async def on_presence_update(member_old: discord.Member, member_new: discord.Mem
     if int(result[0][6]) < 1:
         return
 
-    await update_voice_channel_name(discord.Member(bot.get_user(int(result[0][5]))), channel)
+    member: discord.Member = bot.get_user(int(result[0][5]))
+    await update_voice_channel_name(member, channel)
 
 
 async def update_voice_channel_name(owner: discord.Member, channel: discord.VoiceChannel):
