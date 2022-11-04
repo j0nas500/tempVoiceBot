@@ -277,7 +277,7 @@ async def setup(
     execution = execute(sql)
     if execution is None:
         embed = discord.Embed(
-            description=f"Voice channel <#{channel.id}> set up as a temporary voice channel with the following settings:", )
+            description=f"Voice channel {channel.mention} set up as a temporary voice channel with the following settings:", )
         embed.add_field(name="User Limit", value=user_limit)
         embed.add_field(name="Bitrate", value=bitrate)
         print(f"New Temporary Voice Channel {channel.name}")
@@ -285,7 +285,7 @@ async def setup(
         await ctx.send(embed=embed)
         return
     if execution.startswith("Duplicate entry"):
-        await ctx.respond(f"<#{channel.id}> is already a set up temporary voice channel")
+        await ctx.respond(f"{channel.mention} is already a set up temporary voice channel")
 
 
 @bot.slash_command(name="auto_rename", description="Toggles auto rename for your voice Channel")
@@ -351,9 +351,9 @@ async def ban(
         overwrite = discord.PermissionOverwrite()
         overwrite.connect = False
         await channel.set_permissions(member_kick, reason=f"{member.name} banned {member_kick.name} to temp voice {channel.name}", overwrite=overwrite)
-        if member_kick.voice.channel == channel:
+        if member_kick.voice is not None and member_kick.voice.channel == channel:
             await member_kick.move_to(None)
-        print("f{member.name} banned {member_kick.name} to temp voice {channel.name}")
+        print(f"{member.name} banned {member_kick.name} to temp voice {channel.name}")
         await ctx.respond(f"{member_kick.mention} banned from voice {channel.mention}")
         return
 
@@ -362,7 +362,7 @@ async def ban(
     await channel.set_permissions(member_kick,
                                   reason=f"{member.name} unbanned {member_kick.name} to temp voice {channel.name}",
                                   overwrite=overwrite)
-    print("f{member.name} unbanned {member_kick.name} to temp voice {channel.name}")
+    print(f"{member.name} unbanned {member_kick.name} to temp voice {channel.name}")
     await ctx.respond(f"{member_kick.mention} unbanned from voice {channel.mention}")
     return
 
