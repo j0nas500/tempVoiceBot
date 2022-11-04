@@ -49,11 +49,16 @@ def updateById(table_name: DbTables, tupel_id, column_name: str, value):
     return f"UPDATE {table_name.value} SET {column_name} = {value} where id = {tupel_id}"
 
 
-def insertIntoVoiceChannels(voice_channel_id, guild_id, is_temp: bool, user_limit: int = "Null", bitrate: int = "Null", owner_id = "Null", auto_rename: bool = True):
+def updateVoiceBitrate(guild_id, new_bitrate):
+    return f"UPDATE {DbTables.VOICE.value} SET bitrate = {new_bitrate} where guild_id = {guild_id} AND bitrate > {new_bitrate}"
+
+
+def insertIntoVoiceChannels(voice_channel_id, guild_id, is_temp: bool, user_limit: int = "Null", bitrate: int = "Null",
+                            owner_id="Null", auto_rename: bool = True):
     return f"INSERT INTO {DbTables.VOICE.value} VALUES({voice_channel_id}, {guild_id}, {user_limit}, {bitrate}, {is_temp}, {owner_id}, {auto_rename})"
 
 
-def deleteTupelById(table_name: DbTables, tupel_id, is_temp:bool = None):
+def deleteTupelById(table_name: DbTables, tupel_id, is_temp: bool = None):
     if is_temp is None:
         select = getId(table_name, tupel_id)
         return f"DELETE FROM {table_name.value} where id = ({select})"

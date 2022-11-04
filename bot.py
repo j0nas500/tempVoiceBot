@@ -104,6 +104,9 @@ async def on_guild_update(guild_old: discord.Guild, guild_new: discord.Guild):
     print(f"{guild_new.name} Bitrate has changed to {guild_new.bitrate_limit}")
     sql = updateById(DbTables.GUILDS, guild_new.id, "bitrate_limit", guild_new.bitrate_limit)
     execute(sql)
+    if guild_old.bitrate_limit > guild_new.bitrate_limit:
+        sql = updateVoiceBitrate(guild_new.id, guild_new.bitrate_limit)
+        execute(sql)
 
 
 @bot.event
