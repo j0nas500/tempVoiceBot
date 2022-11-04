@@ -120,8 +120,12 @@ async def on_guild_channel_delete(channel):
 @bot.event
 async def on_voice_state_update(member: discord.Member, voice_state_old: discord.VoiceState,
                                 voice_state_new: discord.VoiceState):
+
     channel_new: discord.VoiceChannel = voice_state_new.channel
     channel_old: discord.VoiceChannel = voice_state_old.channel
+
+    if channel_new == channel_old:
+        return
 
     if channel_new is not None:
         sql = getTupelById(DbTables.VOICE, channel_new.id, False)
@@ -150,6 +154,7 @@ async def on_voice_state_update(member: discord.Member, voice_state_old: discord
             overwrite = discord.PermissionOverwrite()
             overwrite.manage_channels = True
             overwrite.manage_permissions = True
+            overwrite.move_members = True
             await tmp_channel.set_permissions(member, overwrite=overwrite)
             print(f"Temporary Voice Channel {tmp_channel.name} created by {member.name}")
 
@@ -174,9 +179,11 @@ async def on_voice_state_update(member: discord.Member, voice_state_old: discord
                 overwrite = discord.PermissionOverwrite()
                 overwrite.manage_channels = True
                 overwrite.manage_permissions = True
+                overwrite.move_members = True
                 await channel_old.set_permissions(new_owner, overwrite=overwrite)
                 overwrite.manage_channels = None
                 overwrite.manage_permissions = None
+                overwrite.move_members = None
                 await channel_old.set_permissions(member, overwrite=overwrite)
                 print(f"{new_owner.name} is now the Owner of {channel_old.name} (old Owner: {member.name})")
                 execute(sql)
@@ -186,7 +193,9 @@ async def on_voice_state_update(member: discord.Member, voice_state_old: discord
 
             if int(result[0][6]) < 1:
                 return
-            await update_voice_channel_name(discord.Member(bot.get_user(int(result[0][5]))), channel_old)
+
+            member: discord.Member = bot.get_user(int(result[0][5]))
+            await update_voice_channel_name(member, channel_old)
 
 
 @bot.event
