@@ -10,6 +10,7 @@ def createTableVoiceChannels():
     is_temp BOOLEAN NOT NULL,
     owner_id BIGINT,
     auto_rename BOOLEAN NOT NULL DEFAULT TRUE,
+    is_ratelimited BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
     FOREIGN KEY (guild_id) 
         REFERENCES guilds(id)
@@ -35,6 +36,10 @@ def getOwnerId(table_name: DbTables, tupel_id):
     return f"SELECT owner_id FROM {table_name.value} where id = {tupel_id} AND is_temp = TRUE"
 
 
+def getIsRateLimited(table_name: DbTables, tupel_id):
+    return f"SELECT is_ratelimited FROM {table_name.value} where id = {tupel_id}"
+
+
 def getTupelById(table_name: DbTables, tupel_id, is_temp: bool = None):
     if is_temp is None:
         return f"SELECT * FROM {table_name.value} where id = {tupel_id}"
@@ -54,8 +59,8 @@ def updateVoiceBitrate(guild_id, new_bitrate):
 
 
 def insertIntoVoiceChannels(voice_channel_id, guild_id, is_temp: bool, user_limit: int = "Null", bitrate: int = "Null",
-                            owner_id="Null", auto_rename: bool = True):
-    return f"INSERT INTO {DbTables.VOICE.value} VALUES({voice_channel_id}, {guild_id}, {user_limit}, {bitrate}, {is_temp}, {owner_id}, {auto_rename})"
+                            owner_id="Null", auto_rename: bool = True, is_ratelimited: bool = False):
+    return f"INSERT INTO {DbTables.VOICE.value} VALUES({voice_channel_id}, {guild_id}, {user_limit}, {bitrate}, {is_temp}, {owner_id}, {auto_rename}, {is_ratelimited})"
 
 
 def deleteTupelById(table_name: DbTables, tupel_id, is_temp: bool = None):
