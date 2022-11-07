@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from collections import Counter
@@ -5,6 +6,9 @@ from collections import Counter
 import discord
 import dotenv
 import mariadb
+from discord import Spotify
+from pyrate_limiter import (Duration, RequestRate,
+                            Limiter, BucketFullException)
 
 from dbQueries import *
 
@@ -120,7 +124,6 @@ async def on_guild_channel_delete(channel):
 @bot.event
 async def on_voice_state_update(member: discord.Member, voice_state_old: discord.VoiceState,
                                 voice_state_new: discord.VoiceState):
-
     channel_new: discord.VoiceChannel = voice_state_new.channel
     channel_old: discord.VoiceChannel = voice_state_old.channel
 
@@ -145,7 +148,7 @@ async def on_voice_state_update(member: discord.Member, voice_state_old: discord
                 user_limit=int(result[0][2]),
                 bitrate=int(result[0][3]),
                 reason=f"{member.name} joined temp Voice {channel_new.name}",
-                position=channel_new.position,
+                position=channel_new.position + 1,
                 category=channel_new.category
             )
             sql = insertIntoVoiceChannels(tmp_channel.id, tmp_channel.guild.id, True, owner_id=member.id)
@@ -203,6 +206,20 @@ async def on_presence_update(member_old: discord.Member, member_new: discord.Mem
     if member_new.voice is None:
         return
 
+    old_track_id = "same"
+    new_track_id = "same"
+
+    for activity in member_old.activities:
+        if isinstance(activity, Spotify):
+            old_track_id = activity.track_id
+
+    for activity in member_new.activities:
+        if isinstance(activity, Spotify):
+            new_track_id = activity.track_id
+
+    if old_track_id != new_track_id:
+        return
+
     channel: discord.VoiceChannel = member_new.voice.channel
 
     result = execute_list(getTupelById(DbTables.VOICE, channel.id, True))
@@ -215,23 +232,43 @@ async def on_presence_update(member_old: discord.Member, member_new: discord.Mem
     await update_voice_channel_name(member, channel)
 
 
-async def update_voice_channel_name(owner: discord.Member, channel: discord.VoiceChannel):
+rate = RequestRate(2, Duration.MINUTE * 10)
+limiter = Limiter(rate)
 
+
+async def waiting_rename_channel(owner: discord.Member, channel: discord.VoiceChannel, seconds):
+    sql = getIsRateLimited(DbTables.VOICE, channel.id)
+    result = execute_list(sql)
+    if result[0][0] == 1:
+        return
+    sql = updateById(DbTables.VOICE, channel.id, "is_ratelimited", "TRUE")
+    execute(sql)
+    print(f"Try again in {seconds} seconds")
+    await asyncio.sleep(seconds)
+    sql = updateById(DbTables.VOICE, channel.id, "is_ratelimited", "FALSE")
+    execute(sql)
+    #print("FINISHED SLEEEPING")
+    await update_voice_channel_name(owner, channel)
+
+
+async def get_new_channel_name(owner: discord.Member, channel: discord.VoiceChannel):
     activities: list = []
     all_member = channel.members
+    if len(all_member) < 1:
+        return None
+
     for x in all_member:
         for y in x.activities:
             if y.type is discord.ActivityType.playing:
-                #print(y.name)
+                # print(y.name)
                 activities.append(y.name)
                 break
 
     if len(activities) < 1:
         if channel.name == owner.name:
             return
-        print(f"{channel.name} will be renamed to {owner.name} [0]")
-        await channel.edit(name=owner.name)
-        return
+        #print(f"{channel.name} new name will be {owner.name} [0]")
+        return owner.name
 
     counts = dict(Counter(activities))
     highest_value_key = max(counts, key=counts.get)
@@ -240,14 +277,27 @@ async def update_voice_channel_name(owner: discord.Member, channel: discord.Voic
     if len(all_member) * 0.5 < highest_value:
         if channel.name == highest_value_key:
             return
-        print(f"{channel.name} will be renamed to {highest_value_key} [1]")
-        await channel.edit(name=highest_value_key)
-        return
+        #print(f"{channel.name} new name will be {highest_value_key} [1]")
+        return highest_value_key
 
     if channel.name == owner.name:
         return
-    print(f"{channel.name} will be renamed to {owner.name} [2]")
-    await channel.edit(name=owner.name)
+    #print(f"{channel.name} new name will be {owner.name} [2]")
+    return owner.name
+
+
+async def update_voice_channel_name(owner: discord.Member, channel: discord.VoiceChannel):
+    new_name = await get_new_channel_name(owner, channel)
+    if new_name is None:
+        return
+
+    try:
+        limiter.try_acquire(channel.id)
+        print(f"{channel.name} has been renamed to {new_name}")
+        await channel.edit(name=new_name)
+    except BucketFullException as err:
+        print(f"{channel.name} can't be renamed to {new_name} cause Rate Limit")
+        await waiting_rename_channel(owner, channel, 210)
 
 
 @bot.slash_command(name="setup", description="Setup for temp voice channels")
@@ -324,14 +374,20 @@ async def auto_rename(
 
 @bot.slash_command(name="ban", description="Ban/Unban Member from your temp Voice")
 @discord.default_permissions(
-    connect=True
+    connect=True,
+    manage_permissions=True
 )
 async def ban(
         ctx,
-        member_to_kick: discord.Option(discord.SlashCommandOptionType.user, name="user", description="Select Member to Ban/Unban")
+        member_to_kick: discord.Option(discord.SlashCommandOptionType.user, name="user",
+                                       description="Select Member to Ban/Unban")
 ):
     member: discord.Member = ctx.author
     member_kick: discord.Member = member_to_kick
+
+    if member == member_kick:
+        await ctx.respond("You can't ban yourself")
+        return
 
     if member.voice is None:
         await ctx.respond("You are not in a voice Channel")
@@ -350,7 +406,9 @@ async def ban(
     if channel.permissions_for(member_kick).connect:
         overwrite = discord.PermissionOverwrite()
         overwrite.connect = False
-        await channel.set_permissions(member_kick, reason=f"{member.name} banned {member_kick.name} to temp voice {channel.name}", overwrite=overwrite)
+        await channel.set_permissions(member_kick,
+                                      reason=f"{member.name} banned {member_kick.name} to temp voice {channel.name}",
+                                      overwrite=overwrite)
         if member_kick.voice is not None and member_kick.voice.channel == channel:
             await member_kick.move_to(None)
         print(f"{member.name} banned {member_kick.name} to temp voice {channel.name}")
@@ -367,10 +425,10 @@ async def ban(
     return
 
 
-
 # intents = discord.Intents.default()
 # intents.presences = True
 # intents.members = True
 # intents.message_content = True
+
 
 bot.run(os.getenv("TOKEN"))
