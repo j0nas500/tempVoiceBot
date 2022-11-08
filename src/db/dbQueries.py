@@ -20,7 +20,7 @@ def createTableVoiceChannels():
 
 def createTableRoles():
     return f"""CREATE TABLE IF NOT EXISTS {DbTables.ROLES.value}(
-    idd BIGINT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED NOT NULL,
     guild_id BIGINT UNSIGNED NOT NULL,
     user_limit INT,
     bitrate INT,
