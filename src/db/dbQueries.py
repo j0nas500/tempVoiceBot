@@ -1,8 +1,25 @@
-from DbTables import DbTables
+from src.db.DbTables import DbTables
 
 
 def createTableVoiceChannels():
     return f"""CREATE TABLE IF NOT EXISTS {DbTables.VOICE.value}(
+    id BIGINT UNSIGNED NOT NULL,
+    guild_id BIGINT UNSIGNED NOT NULL,
+    user_limit INT,
+    bitrate INT,
+    is_temp BOOLEAN NOT NULL,
+    owner_id BIGINT,
+    auto_rename BOOLEAN NOT NULL DEFAULT TRUE,
+    is_ratelimited BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id),
+    FOREIGN KEY (guild_id) 
+        REFERENCES guilds(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE)"""
+
+
+def createTableRoles():
+    return f"""CREATE TABLE IF NOT EXISTS {DbTables.ROLES.value}(
     id BIGINT UNSIGNED NOT NULL,
     guild_id BIGINT UNSIGNED NOT NULL,
     user_limit INT,
