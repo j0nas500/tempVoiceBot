@@ -71,7 +71,7 @@ class EventsListener(commands.Bot, ABC):
                     user_limit=int(result[0][2]),
                     bitrate=int(result[0][3]),
                     reason=f"{member.name} joined temp Voice {channel_new.name}",
-                    position=channel_new.position + 1,
+                    position=channel_new.position,
                     category=channel_new.category
                 )
                 sql = insertIntoVoiceChannels(tmp_channel.id, tmp_channel.guild.id, True, owner_id=member.id)
