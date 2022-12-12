@@ -25,7 +25,7 @@ class EventsListener(commands.Bot, ABC):
         embed = discord.Embed(
             description=f"{event.name} created"
         )
-        channel = await event.guild.get_channel(1051714287355306015)
+        channel = event.guild.get_channel(1051714287355306015)
         if channel is None:
             return
         await channel.send(embeds=embed)
