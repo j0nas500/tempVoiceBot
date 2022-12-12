@@ -19,6 +19,17 @@ class EventsListener(commands.Bot, ABC):
     async def on_ready(self):
         print(f"{self.user} is ready and online!")
 
+    async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
+        if not event.guild.id == 257469328918577153:
+            return
+        embed = discord.Embed(
+            description=f"{event.name} created"
+        )
+        channel = await event.guild.get_channel(1051714287355306015)
+        if channel is None:
+            return
+        await channel.send(embeds=embed)
+
     async def on_guild_join(self, guild: discord.Guild):
         print(f"{self.user} joined {self.guild.name}")
         sql = insertIntoGuilds(guild.id, int(guild.bitrate_limit))
