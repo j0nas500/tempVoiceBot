@@ -28,7 +28,7 @@ class EventsListener(commands.Bot, ABC):
         channel = event.guild.get_channel(1051714287355306015)
         if channel is None:
             return
-        await channel.send(embeds=embed)
+        await channel.send(embeds=[embed])
 
     async def on_guild_join(self, guild: discord.Guild):
         print(f"{self.user} joined {self.guild.name}")
