@@ -1,4 +1,6 @@
+import datetime
 from abc import ABC
+from zoneinfo import ZoneInfo
 
 import discord
 from discord import bot, Spotify
@@ -23,7 +25,52 @@ class EventsListener(commands.Bot, ABC):
         if not event.guild.id == 257469328918577153:
             return
         embed = discord.Embed(
-            description=f"{event.name} created"
+            title="Event erstellt",
+            description=event.name,
+            color=discord.Color.green(),
+            timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
+        )
+        channel = event.guild.get_channel(1051714287355306015)
+        if channel is None:
+            return
+        await channel.send(embeds=[embed])
+
+    async def on_scheduled_event_delete(self, event: discord.ScheduledEvent):
+        if not event.guild.id == 257469328918577153:
+            return
+        embed = discord.Embed(
+            title="Event gelöscht",
+            description=event.name,
+            color=discord.Color.dark_red(),
+            timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
+        )
+        channel = event.guild.get_channel(1051714287355306015)
+        if channel is None:
+            return
+        await channel.send(embeds=[embed])
+
+    async def on_scheduled_event_user_add(self, event: discord.ScheduledEvent, member: discord.Member):
+        if not event.guild.id == 257469328918577153:
+            return
+        embed = discord.Embed(
+            title=f"{event.name}: User Add",
+            description=member.mention,
+            color=discord.Color.green(),
+            timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
+        )
+        channel = event.guild.get_channel(1051714287355306015)
+        if channel is None:
+            return
+        await channel.send(embeds=[embed])
+
+    async def on_scheduled_event_user_remove(self, event: discord.ScheduledEvent, member: discord.Member):
+        if not event.guild.id == 257469328918577153:
+            return
+        embed = discord.Embed(
+            title=f"{event.name}: User Remove",
+            description=member.mention,
+            color=discord.Color.dark_red(),
+            timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
         )
         channel = event.guild.get_channel(1051714287355306015)
         if channel is None:
