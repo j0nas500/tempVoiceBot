@@ -41,7 +41,7 @@ class EventsListener(commands.Bot, ABC):
         embed = discord.Embed(
             title="Event gelöscht",
             description=event.name,
-            color=discord.Color.dark_red(),
+            color=discord.Color.red(),
             timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
         )
         channel = event.guild.get_channel(1051714287355306015)
@@ -49,8 +49,12 @@ class EventsListener(commands.Bot, ABC):
             return
         await channel.send(embeds=[embed])
 
-    async def on_scheduled_event_user_add(self, event: discord.ScheduledEvent, member: discord.Member):
-        if not event.guild.id == 257469328918577153:
+    async def on_raw_scheduled_event_user_add(self, payload: discord.RawScheduledEventSubscription):
+        if not payload.guild.id == 257469328918577153:
+            return
+        event: discord.ScheduledEvent = payload.guild.get_scheduled_event(payload.event_id)
+        member: discord.Member = payload.guild.get_member(payload.user_id)
+        if event is None or member is None:
             return
         embed = discord.Embed(
             title=f"{event.name}: User Add",
@@ -63,13 +67,17 @@ class EventsListener(commands.Bot, ABC):
             return
         await channel.send(embeds=[embed])
 
-    async def on_scheduled_event_user_remove(self, event: discord.ScheduledEvent, member: discord.Member):
-        if not event.guild.id == 257469328918577153:
+    async def on_raw_scheduled_event_user_remove(self, payload: discord.RawScheduledEventSubscription):
+        if not payload.guild.id == 257469328918577153:
+            return
+        event: discord.ScheduledEvent = payload.guild.get_scheduled_event(payload.event_id)
+        member: discord.Member = payload.guild.get_member(payload.user_id)
+        if event is None or member is None:
             return
         embed = discord.Embed(
             title=f"{event.name}: User Remove",
             description=member.mention,
-            color=discord.Color.dark_red(),
+            color=discord.Color.red(),
             timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
         )
         channel = event.guild.get_channel(1051714287355306015)
