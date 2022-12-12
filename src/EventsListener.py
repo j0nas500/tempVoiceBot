@@ -29,7 +29,7 @@ class EventsListener(commands.Bot, ABC):
             description=event.name,
             color=discord.Color.green(),
             timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
-        )
+        ).set_footer(text=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin")).strftime("%d.%m.%Y %H:%M:%S"))
         channel = event.guild.get_channel(1051714287355306015)
         if channel is None:
             return
@@ -43,7 +43,7 @@ class EventsListener(commands.Bot, ABC):
             description=event.name,
             color=discord.Color.red(),
             timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
-        )
+        ).set_footer(text=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin")).strftime("%d.%m.%Y %H:%M:%S"))
         channel = event.guild.get_channel(1051714287355306015)
         if channel is None:
             return
@@ -61,7 +61,7 @@ class EventsListener(commands.Bot, ABC):
             description=member.mention,
             color=discord.Color.green(),
             timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
-        )
+        ).set_footer(text=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin")).strftime("%d.%m.%Y %H:%M:%S"))
         channel = event.guild.get_channel(1051714287355306015)
         if channel is None:
             return
@@ -79,7 +79,7 @@ class EventsListener(commands.Bot, ABC):
             description=member.mention,
             color=discord.Color.red(),
             timestamp=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin"))
-        )
+        ).set_footer(text=datetime.datetime.now(tz=ZoneInfo("Europe/Berlin")).strftime("%d.%m.%Y %H:%M:%S"))
         channel = event.guild.get_channel(1051714287355306015)
         if channel is None:
             return
