@@ -190,13 +190,13 @@ class EventsListener(commands.Bot, ABC):
                 await update_voice_channel_name(self.db_connection, member, channel_old)
 
     async def on_presence_update(self, member_old: discord.Member, member_new: discord.Member):
-        if member_new.status.streaming:
+        if member_new.status is discord.Status.streaming:
             content_role = member_new.get_role(257507084642287626)
             streamer_role = member_new.get_role(529140561794301952)
             if content_role in member_new.roles:
                 member_new.add_roles(streamer_role)
 
-        if member_old.status.streaming:
+        if member_old.status is discord.Status.streaming:
             streamer_role = member_new.get_role(529140561794301952)
             if streamer_role in member_old.roles:
                 member_old.remove_roles(streamer_role)
